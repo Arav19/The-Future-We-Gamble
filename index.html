@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Persistent Drag-and-Drop Slot Machine</title>
+    <style>
+
+
+.coin {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: yellow;
+    border: 2px solid black; /* Debugging border */
+    opacity: 0.9; /* Slight transparency for visibility */
+    z-index: 1000; /* Ensure it's on top */
+    pointer-events: none;
+}
+
+
+
+
+
+#reset-button {
+    background-color: #2d2d2d; /* Dark red background */
+    color: white; /* White text */
+    border-radius: 10px; /* Rounded corners */
+    font-size: 16px; /* Font size */
+    padding: 10px; /* Padding for spacing inside the button */
+    cursor: pointer; /* Change cursor to pointer */
+}
+
+#reset-button:hover {
+    background-color: #000000; /* Lighter red on hover */
+    color: #f0f0f0; /* Slightly lighter text on hover */
+}
+
+
+
+#current-budget {
+    height: auto;
+    background-color: #2d2d2d; /* Green background */
+    color: white; /* White text */
+    border-radius: 10px; /* Rounded corners */
+    cursor: pointer; /* Change cursor to pointer */
+    font-size: 16px; /* Font size */
+    padding: 10px; /* Spacing inside the button */
+    line-height: 1.5; /* Spacing between lines */
+    white-space: normal; /* Allow text wrapping */
+    text-align: center; /* Center text */
+}
+
+#current-budget:hover {
+    background-color: #000000; /* Darker green on hover */
+    color: #f0f0f0; /* Slightly lighter text on hover */
+}
+
+
+
+.splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #121212;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.splash-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.splash-text {
+    font-size: 1.2rem;
+    text-align: center;
+    max-width: 600px;
+    margin-bottom: 40px;
+}
+
+.splash-button {
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    background-color: #cea963;
+    color: #121212;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.splash-button:hover {
+    background-color: white;
+}
+
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: white;
+            overflow: hidden;
+        }
+
+        .slot-machine-container {
+            position: relative;
+            z-index: 0; /* Lower than .coin */
+
+            width: 100vw;
+            height: 100vh;
+            background-image: url('background.png'); /* Ensure this path is correct */
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+
+            
+        }
+
+        .draggable {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+        }
+
+        .result-box {
+            color: white;
+            padding: 10px;
+            width: 200px;
+        }
+
+        .add-coin-button {
+        width: 50px;
+        height: 50px;
+        background-color: #cea963; /* Change background to white */
+        color: black; /* Change text color to black */
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 18px;
+    }
+
+    .add-coin-button:hover {
+        background-color: white; /* Optional: Add a hover effect */
+    }
+
+        .percentage-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+        }
+
+        .lever-button {
+        width: 100px;
+        height: 50px;
+        background-color: #cea963; /* Change background to white */
+        color: black; /* Change text color to black */
+        border: none;
+        border-radius: 10px;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    .lever-button:hover {
+        background-color: white; /* Optional: Add a hover effect */
+    }
+
+        .question-mark {
+            width: 30px;
+            height: 30px;
+            background-color: #ff5733;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 16px;
+            line-height: 30px;
+            text-align: center;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .question-mark:hover {
+            background-color: #ff784a;
+        }
+    </style>
+</head>
+<body>
+
+
+    <div class="splash-screen" id="splash-screen">
+        <div class="splash-title">The Future We Gamble</div>
+        <div class="splash-text">
+            Welcome to "The Future We Gamble," an interactive project that explores the impact of resource allocation on society, the economy, and the environment. Adjust the percentages and see how your decisions shape the future.
+        </div>
+        <button class="splash-button" id="start-button">Start Gambling</button>
+    </div>
+    
+
+
+    <div class="slot-machine-container">
+        <div id="slot-wheels" style="
+            position: absolute;
+            top: 44.3%;
+            left: 48.5%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;">
+            <img id="wheel-environment" src="placeholder.png" alt="Environment" style="width: 80px; height: 80px; margin: 0;">
+            <img id="wheel-society" src="placeholder.png" alt="Society" style="width: 80px; height: 80px; margin: 0;">
+            <img id="wheel-economy" src="placeholder.png" alt="Economy" style="width: 80px; height: 80px; margin: 0;">
+        </div>
+    </div>
+    
+    
+        
+        <!-- Results -->
+        <div class="result-box draggable" id="result-environment" style="top: 106px; left: -53px;">Environment</div>
+        <div class="result-box draggable" id="result-society" style="top: 333px; left: -53px;">Society</div>
+        <div class="result-box draggable" id="result-economy" style="top: 545px; left: -57px;">Economy</div>
+
+        <!-- Coin Slots -->
+        <button class="add-coin-button draggable" id="coin-defence" style="top: 683px; left: 419px;">+</button>
+        <button class="add-coin-button draggable" id="coin-environment" style="top: 683px; left: 495px;">+</button>
+        <button class="add-coin-button draggable" id="coin-healthcare" style="top: 684px; left: 573px;">+</button>
+        <button class="add-coin-button draggable" id="coin-industry" style="top: 681px; left: 652px;">+</button>
+
+        <!-- Percentage Displays -->
+        <div class="percentage-display draggable" id="percentage-defence" style="top: 150px; right: 120px;">0%</div>
+        <div class="percentage-display draggable" id="percentage-environment" style="top: 250px; right: 120px;">0%</div>
+        <div class="percentage-display draggable" id="percentage-healthcare" style="top: 350px; right: 120px;">0%</div>
+        <div class="percentage-display draggable" id="percentage-industry" style="top: 450px; right: 120px;">0%</div>
+
+        <!-- Question Mark Buttons -->
+        <button class="question-mark draggable" id="question-defence" style="top: 160px; right: 80px;">?</button>
+        <button class="question-mark draggable" id="question-environment" style="top: 260px; right: 80px;">?</button>
+        <button class="question-mark draggable" id="question-healthcare" style="top: 360px; right: 80px;">?</button>
+        <button class="question-mark draggable" id="question-industry" style="top: 460px; right: 80px;">?</button>
+
+        <!-- Spin Button -->
+<!-- Spin Button -->
+
+<!-- Reset Button -->
+<!-- Reset Button -->
+<button class="lever-button" id="reset-button" style="position: fixed; bottom: 310px; right: 475px;">Reset</button>
+<button class="lever-button" id="current-budget" style="position: fixed; bottom: 220px; right: 475px;">Current Budget</button>
+<button class="lever-button" id="lever" style="position: fixed; bottom: 150px; right: 475px;">Spin</button>
+    </div>
+
+    <script>
+
+
+function addCoinWithEffect(buttonId) {
+    const button = document.getElementById(buttonId);
+    const container = document.querySelector('.slot-machine-container');
+
+    // Get positions
+    const buttonRect = button.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    // Create coin element
+    const coin = document.createElement('div');
+    coin.classList.add('coin');
+
+    // Set initial position relative to the container
+    coin.style.left = `${buttonRect.left - containerRect.left + buttonRect.width / 2 - 10}px`;
+    coin.style.top = `${buttonRect.top - containerRect.top - 30}px`; // Slightly above the button
+
+    // Add to container
+    container.appendChild(coin);
+
+    // Log for debugging
+    console.log("Coin initial position:", coin.style.left, coin.style.top);
+
+    // Animate drop
+    const coinDropDuration = 500; // Drop duration in ms
+    coin.style.transition = `top ${coinDropDuration}ms ease-in, opacity 300ms`;
+    setTimeout(() => {
+        coin.style.top = `${buttonRect.top - containerRect.top + buttonRect.height / 2}px`; // Drop into button
+        coin.style.opacity = '0'; // Fade out
+    }, 0);
+
+    // Remove coin after animation
+    setTimeout(() => {
+        container.removeChild(coin);
+    }, coinDropDuration + 100);
+
+    // Add coin logic
+    const category = buttonId.split('-')[1]; // Extract category from button ID
+    addCoin(category); // Update percentages
+}
+
+
+
+
+
+// Function to reset everything to 0
+function resetAll() {
+    percentages.defence = 0;
+    percentages.environment = 0;
+    percentages.healthcare = 0;
+    percentages.industry = 0;
+
+    // Update percentage displays
+    fundingCategories.forEach((category) => {
+        updatePercentageDisplay(category);
+    });
+
+    // Clear results
+    document.getElementById("result-environment").innerHTML = "Environment";
+    document.getElementById("result-society").innerHTML = "Society";
+    document.getElementById("result-economy").innerHTML = "Economy";
+
+    // Optional: Reset any visuals if needed
+    document.getElementById('wheel-environment').src = 'placeholder.png';
+    document.getElementById('wheel-society').src = 'placeholder.png';
+    document.getElementById('wheel-economy').src = 'placeholder.png';
+}
+
+// Attach event listener to the "Reset" button
+document.getElementById("reset-button").onclick = resetAll;
+
+
+
+        // Placeholder values for current budget percentages
+        const currentBudgetPercentages = {
+    defence: 27,
+    environment: 3,
+    healthcare: 42,
+    industry: 2,
+};
+
+// Function to set current budget and calculate results
+function showCurrentBudget() {
+    percentages.defence = currentBudgetPercentages.defence;
+    percentages.environment = currentBudgetPercentages.environment;
+    percentages.healthcare = currentBudgetPercentages.healthcare;
+    percentages.industry = currentBudgetPercentages.industry;
+
+    // Update percentage displays
+    fundingCategories.forEach((category) => {
+        updatePercentageDisplay(category);
+    });
+
+    // Calculate and show results
+    calculateResults();
+}
+
+// Attach event listener to "Show Current Budget" button
+document.getElementById("current-budget").onclick = showCurrentBudget;
+
+  // Save positions to localStorage
+function savePositions() {
+    const elements = document.querySelectorAll('.draggable');
+    elements.forEach((el) => {
+        const id = el.id;
+        const position = {
+            top: el.style.top,
+            left: el.style.left,
+        };
+        localStorage.setItem(id, JSON.stringify(position));
+    });
+}
+
+// Restore positions from localStorage
+function restorePositions() {
+    const elements = document.querySelectorAll('.draggable');
+    elements.forEach((el) => {
+        const id = el.id;
+        const savedPosition = JSON.parse(localStorage.getItem(id));
+        if (savedPosition) {
+            el.style.top = savedPosition.top;
+            el.style.left = savedPosition.left;
+        }
+    });
+}
+
+// Make elements draggable and save positions
+function makeDraggable(elementId) {
+    const element = document.getElementById(elementId);
+    let offsetX = 0,
+        offsetY = 0,
+        initialX = 0,
+        initialY = 0;
+
+    element.onmousedown = (e) => {
+        e.preventDefault();
+        initialX = e.clientX;
+        initialY = e.clientY;
+        document.onmousemove = dragElement;
+        document.onmouseup = stopDragElement;
+    };
+
+    function dragElement(e) {
+        offsetX = e.clientX - initialX;
+        offsetY = e.clientY - initialY;
+        initialX = e.clientX;
+        initialY = e.clientY;
+
+        element.style.top = element.offsetTop + offsetY + 'px';
+        element.style.left = element.offsetLeft + offsetX + 'px';
+    }
+
+    function stopDragElement() {
+        document.onmousemove = null;
+        document.onmouseup = null;
+
+        // Save position when dragging stops
+        savePositions();
+    }
+}
+
+// Percentage logic
+const fundingCategories = ["defence", "environment", "healthcare", "industry"]; // Replace "education" with "industry"
+const percentages = { defence: 0, environment: 0, healthcare: 0, industry: 0 }; // Replace "education" with "industry"
+const maxPercentage = 100;
+
+function updatePercentageDisplay(category) {
+    const percentageElement = document.getElementById(`percentage-${category}`);
+    if (percentageElement) {
+        percentageElement.textContent = `${percentages[category]}%`;
+    }
+}
+
+
+function addCoin(category) {
+    const totalPercentage = Object.values(percentages).reduce((a, b) => a + b, 0);
+
+    if (totalPercentage + 5 <= maxPercentage) {
+        percentages[category] += 5;
+        updatePercentageDisplay(category);
+    } else {
+        alert("Total allocation cannot exceed 100%!");
+    }
+}
+
+
+
+function calculateResults() {
+    const defence = parseFloat(percentages.defence) || 0;
+    const environment = parseFloat(percentages.environment) || 0;
+    const healthcare = parseFloat(percentages.healthcare) || 0;
+    const industry = parseFloat(percentages.industry) || 0;
+
+    // Environment Outputs
+  // Environment Outputs
+const seaLevelRise = 2 - (environment * 0.02) + (defence * 0.01);
+const temperatureRise = 0.3 - (environment * 0.0015) + (industry * 0.003) + (defence * 0.002);
+const biodiversityLoss = 25 - (environment * 0.15) + (industry * 0.2) + (defence * 0.05);
+
+
+    // Society Outputs
+    const healthcareAccess = 70 + (healthcare * 1.8) + (environment * 0.5) - (defence * 0.3);
+    const industryImpact = 85 + (industry * 1.5) + (healthcare * 1.0) - (defence * 0.2);
+    const hungerReduction = 20 - (healthcare * 0.8) - (industry * 0.4) + (environment * 0.3);
+
+    // Economy Outputs
+    const gdpGrowth = 2 + (industry * 0.7) + (healthcare * 0.4) - (defence * 0.1) + (environment * 0.3);
+    const jobCreation = (industry * 2.5);
+    const incomeEquality = 0.45 - (healthcare * 0.002) - (industry * 0.0018);
+
+    // Update Panels
+    document.getElementById("result-environment").innerHTML = `
+        <strong>Environment</strong>
+        <p>Sea Level Rise: ${seaLevelRise.toFixed(2)} cm</p>
+        <p>Temperature Rise: ${temperatureRise.toFixed(2)} °C</p>
+        <p>Biodiversity Loss: ${biodiversityLoss.toFixed(2)}%</p>
+    `;
+
+    document.getElementById("result-society").innerHTML = `
+        <strong>Society</strong>
+        <p>Healthcare Access: ${healthcareAccess.toFixed(2)}%</p>
+        <p>Industry Impact: ${industryImpact.toFixed(2)}%</p>
+        <p>Hunger Reduction: ${hungerReduction.toFixed(2)}%</p>
+    `;
+
+    document.getElementById("result-economy").innerHTML = `
+        <strong>Economy</strong>
+        <p>GDP Growth: ${gdpGrowth.toFixed(2)}%</p>
+        <p>Job Creation: ${jobCreation.toFixed(2)}%</p>
+        <p>Income Equality (Gini Index): ${incomeEquality.toFixed(2)}</p>
+    `;
+
+    // Update Slot Machine Wheels
+    updateSlotWheels(healthcareAccess, industryImpact, gdpGrowth);
+}
+
+function updateSlotWheels(healthcareAccess, industryImpact, gdpGrowth) {
+    const environmentIcon =
+        healthcareAccess > 90 ? "environment-good.png" :
+        healthcareAccess > 60 ? "environment-medium.png" :
+        "environment-bad.png";
+
+    const societyIcon =
+        industryImpact > 85 ? "society-good.png" :
+        industryImpact > 65 ? "society-medium.png" :
+        "society-bad.png";
+
+    const economyIcon =
+        gdpGrowth > 4 ? "economy-good.png" :
+        gdpGrowth > 1 ? "economy-medium.png" :
+        "economy-bad.png";
+
+    document.getElementById("wheel-environment").src = environmentIcon;
+    document.getElementById("wheel-society").src = societyIcon;
+    document.getElementById("wheel-economy").src = economyIcon;
+}
+
+
+
+
+
+
+
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    restorePositions();
+    const draggableElements = [
+    'result-environment',
+    'result-society',
+    'result-economy',
+    'coin-defence',
+    'coin-environment',
+    'coin-healthcare',
+    'coin-industry',
+    'percentage-defence',
+    'percentage-environment',
+    'percentage-healthcare',
+    'percentage-industry',
+    'question-defence',
+    'question-environment',
+    'question-healthcare',
+    'question-industry',
+];
+
+// Update positions to match original layout
+document.getElementById('coin-industry').style.top = '620px';
+document.getElementById('coin-industry').style.left = '800px';
+
+document.getElementById('percentage-industry').style.top = '550px';
+document.getElementById('percentage-industry').style.right = '90px';
+
+document.getElementById('question-industry').style.top = '540px';
+document.getElementById('question-industry').style.right = '155px';
+    draggableElements.forEach(makeDraggable);
+
+    // Attach event listeners for the coins
+    fundingCategories.forEach((category) => {
+        document.getElementById(`coin-${category}`).onclick = () => addCoin(category);
+    });
+
+    // Attach event listener for the "SPIN" button
+    document.getElementById("lever").onclick = () => {
+        calculateResults();
+    };
+    document.getElementById("lever").style.cursor = "pointer";
+
+    // Attach event listener for the "Show Current Budget" button
+    document.getElementById("current-budget").onclick = showCurrentBudget;
+
+    // Add event listener for Start button
+    document.getElementById("start-button").onclick = () => {
+        document.getElementById("splash-screen").style.display = "none";
+
+        // Disable dragging after splash screen is closed
+        setTimeout(() => {
+            const elements = document.querySelectorAll('.draggable');
+            elements.forEach((el) => {
+                el.onmousedown = null;
+                el.style.cursor = "default";
+            });
+        }, 2000);
+    };
+});
+
+
+    </script>
+</body>
+</html>

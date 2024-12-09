@@ -1,0 +1,87 @@
+/* styles.css */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #121212;
+    color: white;
+    text-align: center;
+}
+
+.slot-machine {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 auto;
+    max-width: 480px;
+}
+
+/* Result Boxes */
+.results {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin: 20px 0;
+}
+.result-box {
+    width: 30%;
+    height: 100px;
+    background-color: #444;
+    border: 2px solid white;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+}
+
+/* Coin Slots */
+.coin-slots {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin: 10px 0;
+}
+.slot {
+    width: 14%;
+    height: 150px;
+    background-color: #333;
+    border: 2px solid white;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+}
+.slot:hover {
+    cursor: pointer;
+    background-color: #666;
+}
+.percentage {
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: white;
+}
+
+/* Lever */
+.lever-container {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 200px;
+}
+input[type="range"] {
+    -webkit-appearance: slider-vertical;
+    writing-mode: bt-lr; /* Vertical Slider */
+    transform: rotate(180deg);
+    height: 200px;
+    margin: 0;
+    background-color: #333;
+}
+.lever-label {
+    margin-top: 10px;
+    font-size: 14px;
+    color: white;
+}
